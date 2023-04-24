@@ -1,0 +1,37 @@
+FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS build-env
+
+# Install Git
+RUN apk add --no-cache git
+
+# Set the working directory
+WORKDIR /app
+
+# Clone the Git repository
+ARG PARAM1=default_value
+ARG PARAM2=default_value
+RUN git clone --branch ${PARAM2} --single-branch "${PARAM1}" .
+
+# Set the working directory to the cloned repository
+WORKDIR /app/
+
+# Install Java using apk
+RUN apk update && apk add --no-cache openjdk11
+
+# Install SonarScanner
+RUN dotnet tool install --global dotnet-sonarscanner
+
+# Restore dependencies, build the application, and run unit tests
+RUN dotnet build eShopOnWeb.sln -c Release -o out
+RUN dotnet test tests/UnitTests/UnitTests.csproj -c Release -o out
+
+RUN export PATH="$PATH:/root/.dotnet/tools"
+
+# Add dotnet-sonarscanner command to system PATH
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+RUN ls /root/.dotnet/tools/
+
+# Run SonarQube analysis
+RUN dotnet-sonarscanner begin /k:"Sonar2" /d:sonar.host.url="http://localhost:9000"  /d:sonar.login="f8861c8779850a2f2a95eb7a1bff6e541ac65e10"
+RUN dotnet build eShopOnWeb.sln /p:WarningLevel=5
+RUN dotnet-sonarscanner end /d:sonar.login="f8861c8779850a2f2a95eb7a1bff6e541ac65e10"
