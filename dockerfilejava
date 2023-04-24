@@ -1,0 +1,25 @@
+# Stage 1: Git checkout
+FROM alpine/git AS git-checkout
+WORKDIR /app
+ARG PARAM1=default_value
+ARG PARAM2=default_value
+RUN git clone --branch ${PARAM2} --single-branch "${PARAM1}" .
+
+# Stage 2: Build and test with Maven
+FROM maven:3.8.3-jdk-11-slim AS build
+WORKDIR /app
+COPY --from=git-checkout /app .
+RUN mvn clean package
+
+# Stage 3: Run tests
+FROM build AS test
+RUN mvn test
+
+# Stage 4: Analyze code with SonarQube
+FROM build AS sonar
+RUN mvn sonar:sonar \
+  -D sonar.host.url=http://localhost:9000/ \
+  -D sonar.login=admin \
+  -D sonar.password=admin123 \
+  -D sonar.projectKey=Sonar \
+  -D sonar.exclusions=vender/**,resources/**,**/*.java
