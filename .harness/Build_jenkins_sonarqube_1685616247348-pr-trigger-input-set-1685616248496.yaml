@@ -1,0 +1,14 @@
+inputSet:
+  name: Build_jenkins_sonarqube_1685616247348-pr-trigger-input-set
+  identifier: Build_jenkins_sonarqube_1685616247348prtriggerinputset
+  orgIdentifier: default
+  projectIdentifier: default_project
+  pipeline:
+    identifier: Build_jenkins_sonarqube_1685616247348
+    properties:
+      ci:
+        codebase:
+          build:
+            type: PR
+            spec:
+              number: <+trigger.prNumber>
